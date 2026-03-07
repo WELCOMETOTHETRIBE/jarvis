@@ -5,9 +5,7 @@ WORKDIR /app
 
 # copy only what we need first to leverage docker cache
 COPY pyproject.toml pyproject.toml
-COPY setup.cfg setup.cfg 2>/dev/null || true
 COPY README.md README.md
-COPY LICENSE* LICENSE* 2>/dev/null || true
 
 # install build dependencies and the package
 RUN pip install --upgrade pip setuptools wheel
