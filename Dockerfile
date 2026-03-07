@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 8501
 
 # default command runs the web UI, using PORT env variable if provided
-CMD ["streamlit", "run", "web/app.py", "--server.port", "${PORT}", "--server.address", "0.0.0.0"]
+CMD streamlit run web/app.py --server.port $PORT --server.address 0.0.0.0
