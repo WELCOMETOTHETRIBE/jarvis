@@ -30,11 +30,16 @@ class Config(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        # Make paths absolute
+        # Make paths absolute - if data_dir is absolute, make db_path relative to it
         if not self.data_dir.is_absolute():
             self.data_dir = self.root_path / self.data_dir
         if not self.db_path.is_absolute():
-            self.db_path = self.root_path / self.db_path
+            # If data_dir is absolute (e.g., from env var), db_path should be relative to data_dir
+            # Otherwise, it's relative to root_path
+            if self.data_dir.is_absolute():
+                self.db_path = self.data_dir / self.db_path
+            else:
+                self.db_path = self.root_path / self.db_path
 
         # Ensure data directory exists
         self.data_dir.mkdir(exist_ok=True)
