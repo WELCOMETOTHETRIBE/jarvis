@@ -1,0 +1,35 @@
+name: General
+slug: general
+description: General purpose AI assistant workspace
+default_text_model: gpt-4
+default_image_model: dall-e-3
+default_tts_model: tts-1
+voice: alloy
+
+kb:
+  roots:
+    - ./knowledge
+  auto_ingest_extensions:
+    - .md
+    - .txt
+    - .json
+
+tools:
+  enabled:
+    - kb_search
+    - file_read
+    - git
+  shell:
+    allow_write: false
+    allow_network: false
+
+prompting:
+  include_workspace_system: true
+  max_kb_chunks: 6
+  max_recent_messages: 12
+
+security:
+  redact_env_vars: true
+  require_confirmation_for:
+    - shell_write
+    - file_delete
