@@ -200,6 +200,20 @@ This project can be deployed on [Railway](https://railway.app) using their Pytho
   web: streamlit run web/app.py --server.port $PORT --server.address 0.0.0.0
   ```
 
+*Example CLI session:*
+```bash
+railway login                      # authenticate
+railway init jarvis                # create or link a project
+railway add postgres               # add Postgres; note DATABASE_URL
+railway volume create -n data      # create a named persistent volume
+railway volume attach data:/data   # mount it to /data inside your container
+railway variables set \
+  OPENAI_API_KEY=xxx \
+  ELEVENLABS_API_KEY=yyy \
+  DATA_DIR=/data
+railway up                         # deploy the service
+```
+
 ### 2. Environment variables
 Set the following with `railway variables set` or via the dashboard:
 
