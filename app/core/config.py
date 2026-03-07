@@ -15,10 +15,13 @@ class Config(BaseModel):
     openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
     klingai_api_key: Optional[str] = os.getenv("KLINGAI_API_KEY")  # KlingAI service key
 
-    # Paths
-    root_path: Path = Path.cwd()
-    data_dir: Path = Path("data")
-    db_path: Path = Path("data/db/jarvis.db")
+    # Paths (can be overridden by environment variables, useful for containers/volumes)
+    root_path: Path = Path(os.getenv("ROOT_PATH", Path.cwd()))
+    data_dir: Path = Path(os.getenv("DATA_DIR", "data"))
+    db_path: Path = Path(os.getenv("DB_PATH", "data/db/jarvis.db"))
+
+    # Database URL (Postgres, SQLite, etc.)
+    database_url: Optional[str] = os.getenv("DATABASE_URL")
 
     # Defaults
     default_workspace: str = "general"
@@ -48,3 +51,9 @@ class Config(BaseModel):
                         self.default_voice = user_config["default_voice"]
             except:
                 pass  # Ignore config load errors
+        # If a DATABASE_URL is provided we might connect to an external database
+        # The current code does not yet use it, but storing it here ensures the
+        # value is traversed through to any later database manager or ORM.
+        if self.database_url:
+            # TODO: wire this into a SQLAlchemy or similar layer
+            pass

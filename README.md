@@ -184,3 +184,50 @@ jarvis-cli/
 - [ ] Enterprise security features
 - [ ] Multi-user support
 - [ ] Plugin system
+
+---
+## 🚀 Deployment (Railway)
+
+This project can be deployed on [Railway](https://railway.app) using their Python support.
+
+### 1. Prepare the code
+- A `Dockerfile` and `requirements.txt` are included for reproducible builds.
+- Configuration now reads `ROOT_PATH`, `DATA_DIR`, `DB_PATH`, and `DATABASE_URL` from
+  the environment.  Container volumes should mount to the `DATA_DIR` path.
+- A `Procfile` is **not** required because Railway will auto-detect the Python app,
+  but you may specify one if you prefer:
+  ```text
+  web: streamlit run web/app.py --server.port $PORT --server.address 0.0.0.0
+  ```
+
+### 2. Environment variables
+Set the following with `railway variables set` or via the dashboard:
+
+- `OPENAI_API_KEY`, `REPLICATE_API_KEY`, `ELEVENLABS_API_KEY`, etc.
+- `DATA_DIR` (e.g. `/data` if you mount a volume).
+- `DATABASE_URL` if you plan to use a PostgreSQL database (see next section).
+- `PORT` is managed by Railway automatically.
+
+### 3. Database & volume
+- Add a PostgreSQL plugin: `railway add postgres` or via the UI.  The generated
+  `DATABASE_URL` will be available as an env var.
+- Create a persistent volume with `railway volume create -n data` and mount it
+  to the same path as `DATA_DIR` (default `/data`).  This ensures session files,
+  uploads, and the SQLite database (if you're still using it) persist across
+  deploys.
+
+### 4. Deploy
+```
+railway up
+```
+Railway will build the Dockerfile, install dependencies, and start the Streamlit
+server.  Monitor logs with `railway logs` and open the app with `railway open`.
+
+### 5. Notes
+- The current codebase uses SQLite by default; switching to Postgres is a
+  future enhancement.  `Config.database_url` captures the connection string when
+  provided.
+- Sessions and KB data are not yet backed by a database; they live under
+  `DATA_DIR`.
+
+Feel free to modify these instructions as the project evolves.
