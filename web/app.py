@@ -36,8 +36,12 @@ def _ping_anthropic(api_key: Optional[str]) -> bool:
     if not api_key:
         return False
     try:
+        # anthropic requires version header
         resp = httpx.get("https://api.anthropic.com/v1/models",
-                          headers={"x-api-key": api_key},
+                          headers={
+                              "x-api-key": api_key,
+                              "anthropic-version": "2023-06-01"
+                          },
                           timeout=5.0)
         ok = resp.status_code == 200
         if not ok:
@@ -645,6 +649,13 @@ with st.sidebar:
     st.markdown("#### 🎯 Quick Model Config")
     
     # Model selector
+    # allow external actions (e.g. "Chat via" buttons) to override
+    if "force_provider" in st.session_state:
+        forced = st.session_state.pop("force_provider")
+        # set sidebar variables before creating widgets
+        st.session_state.sidebar_provider = forced.get("provider")
+        st.session_state.sidebar_model = forced.get("model")
+
     provider_choice = st.selectbox(
         "Provider",
         list(st.session_state.model_options.keys()),
@@ -874,14 +885,10 @@ for i, (api_name, models, ping_fn) in enumerate(apis):
         # special case OpenAI -> openai, ElevenLabs isn't a text provider; skip if no text models
         if provider_key == "openai" or provider_key == "anthropic" or provider_key == "groq":
             if st.button(f"Chat via {api_name}", key=f"use_{api_name}"):
-                # select first available model for this provider
                 options = st.session_state.model_options.get(provider_key, [])
                 if options:
-                    st.session_state.model_settings["text_provider"] = provider_key
-                    st.session_state.model_settings["text_model"] = options[0]
-                    # update sidebar selectors
-                    st.session_state.sidebar_provider = provider_key
-                    st.session_state.sidebar_model = options[0]
+                    # schedule sidebar update after widgets are recreated
+                    st.session_state.force_provider = {"provider": provider_key, "model": options[0]}
                     st.experimental_rerun()
 
 # Advanced Analytics Section
