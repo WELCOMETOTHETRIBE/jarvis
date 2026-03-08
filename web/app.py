@@ -16,6 +16,58 @@ from app.media.tts import TextToSpeech
 from app.media.stt import SpeechToText
 from app.media.player import MediaPlayer
 
+import httpx
+from typing import Optional
+
+
+def _ping_openai(api_key: Optional[str]) -> bool:
+    if not api_key:
+        return False
+    try:
+        resp = httpx.get("https://api.openai.com/v1/models",
+                          headers={"Authorization": f"Bearer {api_key}"},
+                          timeout=5.0)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
+def _ping_anthropic(api_key: Optional[str]) -> bool:
+    if not api_key:
+        return False
+    try:
+        resp = httpx.get("https://api.anthropic.com/v1/models",
+                          headers={"x-api-key": api_key},
+                          timeout=5.0)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
+def _ping_groq(api_key: Optional[str]) -> bool:
+    # Groq credentials usually go in Authorization: Token <key>
+    if not api_key:
+        return False
+    try:
+        resp = httpx.get("https://api.groq.com/v1/models",
+                          headers={"Authorization": f"Token {api_key}"},
+                          timeout=5.0)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
+def _ping_elevenlabs(api_key: Optional[str]) -> bool:
+    if not api_key:
+        return False
+    try:
+        resp = httpx.get("https://api.elevenlabs.io/v1/voices",
+                          headers={"xi-api-key": api_key},
+                          timeout=5.0)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
 st.set_page_config(
     page_title="Jarvis — AI Console",
     page_icon="✨",
@@ -738,14 +790,37 @@ st.markdown("### 🔍 Real-time API Health Monitor")
 api_status_cols = st.columns(4)
 
 apis = [
-    ("OpenAI", "GPT-4, DALL-E", "status-online", "✓ Connected"),
-    ("Anthropic", "Claude-3", "status-online", "✓ Connected"),
-    ("Groq", "Mixtral, Llama", "status-online", "✓ Connected"),
-    ("ElevenLabs", "TTS Voices", "status-online", "✓ Connected")
+    ("OpenAI", "GPT-4, DALL-E", _ping_openai),
+    ("Anthropic", "Claude-3", _ping_anthropic),
+    ("Groq", "Mixtral, Llama", _ping_groq),
+    ("ElevenLabs", "TTS Voices", _ping_elevenlabs),
 ]
 
-for i, (api_name, models, status_class, status_text) in enumerate(apis):
+for i, (api_name, models, ping_fn) in enumerate(apis):
     with api_status_cols[i]:
+        # determine current health by pinging; caching not necessary since UI is small
+        has_key = False
+        if api_name == "OpenAI":
+            from app.core.config import Config
+            has_key = bool(Config().openai_api_key)
+        elif api_name == "Anthropic":
+            import os
+            has_key = bool(os.getenv("ANTHROPIC_API_KEY"))
+        elif api_name == "Groq":
+            import os
+            has_key = bool(os.getenv("GROQ_API_KEY"))
+        elif api_name == "ElevenLabs":
+            import os
+            has_key = bool(os.getenv("ELEVENLABS_API_KEY"))
+        status_text = "?"
+        status_class = "status-offline"
+        if has_key:
+            ok = ping_fn(os.getenv(api_name.upper() + "_API_KEY") if api_name != "OpenAI" else Config().openai_api_key)
+            status_text = "✓ Connected" if ok else "✗ Unreachable"
+            status_class = "status-online" if ok else "status-offline"
+        else:
+            status_text = "🔒 No Key"
+
         st.markdown(f"""
         <div class="tool-card">
             <div class="tool-card-title">
@@ -756,6 +831,14 @@ for i, (api_name, models, status_class, status_text) in enumerate(apis):
             <div class="tool-card-status healthy">{status_text}</div>
         </div>
         """, unsafe_allow_html=True)
+
+        # clickable ping button to re-check
+        if st.button(f"Ping {api_name}", key=f"ping_{api_name}"):
+            ok = ping_fn(os.getenv(api_name.upper() + "_API_KEY") if api_name != "OpenAI" else Config().openai_api_key)
+            if ok:
+                st.success(f"{api_name} responsive")
+            else:
+                st.error(f"{api_name} unreachable")
 
 # Advanced Analytics Section
 st.markdown("### 📊 Advanced Analytics & Insights")
