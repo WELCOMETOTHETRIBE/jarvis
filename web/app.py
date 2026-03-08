@@ -727,6 +727,29 @@ for i, (action, desc) in enumerate(quick_actions):
 
 st.markdown("---")
 
+# ====== CHAT INTERFACE ======
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+for role, text in st.session_state.chat_history:
+    if role == "user":
+        st.markdown(f"<div style='text-align:right; padding:0.5rem;'><span style='background:#06B6D4; color:#0F172A; padding:0.5rem 1rem; border-radius:12px; display:inline-block;'>{text}</span></div>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<div style='text-align:left; padding:0.5rem;'><span style='background:#334155; color:#F8FAFC; padding:0.5rem 1rem; border-radius:12px; display:inline-block;'>{text}</span></div>", unsafe_allow_html=True)
+
+user_input = st.text_input("Type a message", key="chat_input")
+if st.button("Send", key="send_button") and user_input:
+    st.session_state.chat_history.append(("user", user_input))
+    # send to provider
+    try:
+        response = provider.generate_text(user_input, model=st.session_state.model_settings["text_model"])
+        st.session_state.chat_history.append(("assistant", response))
+    except Exception as e:
+        st.session_state.chat_history.append(("assistant", f"[error] {e}"))
+    st.session_state.chat_input = ""
+
+st.markdown("---")
+
 # ====== INCREDIBLE AI DASHBOARD ======
 st.markdown("---")
 st.markdown("## 🚀 AI Operations Dashboard")
