@@ -39,21 +39,27 @@ def _ping_anthropic(api_key: Optional[str]) -> bool:
         resp = httpx.get("https://api.anthropic.com/v1/models",
                           headers={"x-api-key": api_key},
                           timeout=5.0)
-        return resp.status_code == 200
-    except Exception:
+        ok = resp.status_code == 200
+        if not ok:
+            st.write(f"Anthropic ping status: {resp.status_code} {resp.text[:100]}")
+        return ok
+    except Exception as e:
+        st.write(f"Anthropic ping error: {e}")
         return False
 
 
 def _ping_groq(api_key: Optional[str]) -> bool:
-    # Groq credentials usually go in Authorization: Token <key>
+    # Groq uses OpenAI-compatible endpoint and bearer token
     if not api_key:
         return False
     try:
-        resp = httpx.get("https://api.groq.com/v1/models",
-                          headers={"Authorization": f"Token {api_key}"},
+        resp = httpx.get("https://api.groq.com/openai/v1/models",
+                          headers={"Authorization": f"Bearer {api_key}"},
                           timeout=5.0)
         return resp.status_code == 200
-    except Exception:
+    except Exception as e:
+        # log for debug; Streamlit will print to logs
+        st.write(f"Groq ping error: {e}")
         return False
 
 
