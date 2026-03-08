@@ -889,7 +889,7 @@ for i, (api_name, models, ping_fn) in enumerate(apis):
                 if options:
                     # schedule sidebar update after widgets are recreated
                     st.session_state.force_provider = {"provider": provider_key, "model": options[0]}
-                    st.experimental_rerun()
+                    st.rerun()
 
 # Advanced Analytics Section
 st.markdown("### 📊 Advanced Analytics & Insights")
