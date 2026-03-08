@@ -840,6 +840,21 @@ for i, (api_name, models, ping_fn) in enumerate(apis):
             else:
                 st.error(f"{api_name} unreachable")
 
+        # Chat via this provider button
+        provider_key = api_name.lower()
+        # special case OpenAI -> openai, ElevenLabs isn't a text provider; skip if no text models
+        if provider_key == "openai" or provider_key == "anthropic" or provider_key == "groq":
+            if st.button(f"Chat via {api_name}", key=f"use_{api_name}"):
+                # select first available model for this provider
+                options = st.session_state.model_options.get(provider_key, [])
+                if options:
+                    st.session_state.model_settings["text_provider"] = provider_key
+                    st.session_state.model_settings["text_model"] = options[0]
+                    # update sidebar selectors
+                    st.session_state.sidebar_provider = provider_key
+                    st.session_state.sidebar_model = options[0]
+                    st.experimental_rerun()
+
 # Advanced Analytics Section
 st.markdown("### 📊 Advanced Analytics & Insights")
 
